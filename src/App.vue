@@ -16,10 +16,13 @@ import {
   Command,
   HelpCircle,
   Power,
-  Pin
+  Pin,
+  PanelLeftOpen,
+  PanelLeftClose
 } from 'lucide-vue-next';
 
 const currentCategory = ref('deck');
+const isSidebarMini = ref(false);
 
 onMounted(() => {
   meldClient.connect();
@@ -36,19 +39,23 @@ watch(() => meldClient.scenes, (scenes) => {
 <template>
   <div class="h-screen w-screen flex bg-[#030712] text-slate-200 overflow-hidden font-sans">
     <!-- Sidebar Navigation -->
-    <aside class="w-20 md:w-64 border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-xl">
-      <div class="p-6 flex items-center gap-3">
+    <aside :class="[
+      'transition-all duration-300 ease-in-out border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-xl group/sidebar relative shrink-0',
+      isSidebarMini ? 'w-20' : 'w-20 md:w-64'
+    ]">
+
+      <div class="p-6 flex items-center gap-3 overflow-hidden">
         <div
-          class="w-10 h-10 bg-brand-indigo rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          class="shrink-0 w-10 h-10 bg-brand-indigo rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
           <Activity :size="20" class="text-white" />
         </div>
-        <div class="hidden md:block">
-          <h1 class="font-bold text-sm tracking-tight text-white">Meld Console</h1>
-          <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Pro Control</p>
+        <div class="transition-all duration-300" :class="isSidebarMini ? 'opacity-0 w-0' : 'opacity-100 w-auto'">
+          <h1 class="font-bold text-sm tracking-tight text-white whitespace-nowrap">Meld Console</h1>
+          <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold whitespace-nowrap">Pro Control</p>
         </div>
       </div>
 
-      <nav class="flex-1 px-3 py-4 space-y-1">
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-hidden">
         <button v-for="cat in [
           { id: 'deck', label: 'My Deck', icon: LayoutDashboard },
           { id: 'scenes', label: 'Scenes', icon: Monitor },
@@ -56,17 +63,23 @@ watch(() => meldClient.scenes, (scenes) => {
           { id: 'audio', label: 'Audio', icon: Mic2 },
           { id: 'settings', label: 'Settings', icon: Settings }
         ]" :key="cat.id" @click="currentCategory = cat.id"
-          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group"
-          :class="currentCategory === cat.id ? 'bg-white/5 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-white/2'">
-          <component :is="cat.icon" :size="20" :stroke-width="currentCategory === cat.id ? 2.5 : 2" />
-          <span class="hidden md:block font-medium text-sm">{{ cat.label }}</span>
-          <div v-if="currentCategory === cat.id"
-            class="ml-auto w-1.5 h-1.5 rounded-full bg-brand-indigo shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
+          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group" :class="[
+            currentCategory === cat.id ? 'bg-white/5 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-white/2',
+            isSidebarMini ? 'justify-center px-0' : ''
+          ]">
+          <component :is="cat.icon" :size="22" :stroke-width="currentCategory === cat.id ? 2.5 : 2" class="shrink-0" />
+          <span class="transition-all duration-300 font-medium text-sm whitespace-nowrap" :class="[
+            isSidebarMini ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 md:block hidden'
+          ]">{{ cat.label }}</span>
+          <div v-if="currentCategory === cat.id && !isSidebarMini"
+            class="ml-auto w-1.5 h-1.5 rounded-full bg-brand-indigo shadow-[0_0_8px_rgba(99,102,241,0.6)] hidden md:block">
+          </div>
         </button>
       </nav>
 
-      <div class="p-4 mt-auto border-t border-white/5 space-y-3">
-        <div class="hidden md:block px-2">
+      <div class="p-4 mt-auto border-t border-white/5 space-y-3 overflow-hidden">
+        <div class="hidden md:block px-2 transition-all duration-300"
+          :class="isSidebarMini ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'">
           <p class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">System Health</p>
           <div class="space-y-2">
             <div class="flex items-center justify-between text-[11px]">
@@ -79,9 +92,11 @@ watch(() => meldClient.scenes, (scenes) => {
           </div>
         </div>
         <button
-          class="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all">
-          <Power :size="18" />
-          <span class="hidden md:block text-xs font-bold uppercase tracking-wider">Disconnect</span>
+          class="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all overflow-hidden"
+          :class="isSidebarMini ? 'px-0' : ''">
+          <Power :size="18" class="shrink-0" />
+          <span class="transition-all duration-300 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+            :class="isSidebarMini ? 'opacity-0 w-0' : 'md:block hidden'">Disconnect</span>
         </button>
       </div>
     </aside>
@@ -90,16 +105,24 @@ watch(() => meldClient.scenes, (scenes) => {
     <main class="flex-1 flex flex-col relative overflow-hidden">
       <!-- Top Header Bar -->
       <header
-        class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-black/10 backdrop-blur-md z-10">
-        <div class="flex items-center gap-4">
-          <h2 class="text-lg font-bold capitalize">{{ currentCategory === 'deck' ? 'My Control Deck' : currentCategory
+        class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-black/10 backdrop-blur-md z-10 transition-all">
+        <div class="flex items-center gap-6">
+          <button @click="isSidebarMini = !isSidebarMini"
+            class="hidden md:flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all outline-none"
+            :title="isSidebarMini ? 'Expand Sidebar' : 'Collapse Sidebar'">
+            <component :is="isSidebarMini ? PanelLeftOpen : PanelLeftClose" :size="22" />
+          </button>
+
+          <div class="flex items-center gap-4">
+            <h2 class="text-lg font-bold capitalize">{{ currentCategory === 'deck' ? 'My Control Deck' : currentCategory
             }}</h2>
-          <div class="h-4 w-px bg-white/10"></div>
-          <p class="text-xs text-slate-400">
-            {{ currentCategory === 'deck' ? deckManager.pinnedIds.value.length : (currentCategory === 'scenes' ?
-              meldClient.scenes.length : 'Control Panel') }}
-            Active Elements
-          </p>
+            <div class="h-4 w-px bg-white/10"></div>
+            <p class="text-xs text-slate-400">
+              {{ currentCategory === 'deck' ? deckManager.pinnedIds.value.length : (currentCategory === 'scenes' ?
+                meldClient.scenes.length : 'Control Panel') }}
+              Active Elements
+            </p>
+          </div>
         </div>
 
         <div class="flex items-center gap-3">
