@@ -1,5 +1,6 @@
 {
-  "name": "ecliptic-oort",
+  "name": "meld-studio-deck",
+  "description": "A premium control deck interface for Meld Studio, featuring customizable scenes, stream/recording controls, and system health monitoring.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
