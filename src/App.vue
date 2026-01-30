@@ -1,133 +1,306 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { meldClient } from './MeldClient';
+import { deckManager } from './DeckManager';
 import DeckButton from './components/DeckButton.vue';
+import StatusBadge from './components/StatusBadge.vue';
+import {
+  LayoutDashboard,
+  Settings,
+  Activity,
+  Video,
+  Circle,
+  Radio,
+  Mic2,
+  Monitor,
+  Command,
+  HelpCircle,
+  Power,
+  Pin
+} from 'lucide-vue-next';
+
+const currentCategory = ref('deck');
 
 onMounted(() => {
   meldClient.connect();
 });
+
+// Set default pins once scenes are loaded
+watch(() => meldClient.scenes, (scenes) => {
+  if (scenes.length > 0) {
+    deckManager.setDefaults(scenes.map(s => s.id));
+  }
+}, { immediate: true });
 </script>
 
 <template>
-  <div class="min-h-screen p-6 flex flex-col gap-6">
-    <!-- Header / Status -->
-    <header class="flex items-center justify-between glass rounded-2xl px-6 py-4">
-      <div class="flex items-center gap-3">
-        <div 
-          class="w-3 h-3 rounded-full animate-pulse"
-          :class="meldClient.isConnected.value ? 'bg-green-500' : 'bg-red-500'"
-        ></div>
-        <h1 class="text-xl font-bold tracking-tight">Meld Stream Deck</h1>
-      </div>
-      
-      <div class="flex gap-4">
-        <div v-if="meldClient.isStreaming.value" class="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-bold border border-red-500/30 uppercase tracking-widest">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-          </span>
-          Live
+  <div class="h-screen w-screen flex bg-[#030712] text-slate-200 overflow-hidden font-sans">
+    <!-- Sidebar Navigation -->
+    <aside class="w-20 md:w-64 border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-xl">
+      <div class="p-6 flex items-center gap-3">
+        <div
+          class="w-10 h-10 bg-brand-indigo rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <Activity :size="20" class="text-white" />
         </div>
-        <div v-if="meldClient.isRecording.value" class="flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-xs font-bold border border-indigo-500/30 uppercase tracking-widest">
-          Rec
+        <div class="hidden md:block">
+          <h1 class="font-bold text-sm tracking-tight text-white">Meld Console</h1>
+          <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Pro Control</p>
         </div>
       </div>
-    </header>
 
-    <!-- Main Deck Grid -->
-    <main class="flex-1 overflow-y-auto pr-2">
-      <div 
-        v-if="meldClient.isConnected.value"
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
-      >
-        <!-- Scenes -->
-        <DeckButton
-          v-for="scene in meldClient.scenes"
-          :key="scene.id"
-          label="Scene"
-          :active="scene.current"
-          color="indigo"
-          @click="meldClient.showScene(scene.id)"
-        >
-          <span class="text-sm font-medium text-center truncate w-full">{{ scene.name }}</span>
-        </DeckButton>
+      <nav class="flex-1 px-3 py-4 space-y-1">
+        <button v-for="cat in [
+          { id: 'deck', label: 'My Deck', icon: LayoutDashboard },
+          { id: 'scenes', label: 'Scenes', icon: Monitor },
+          { id: 'controls', label: 'Controls', icon: Command },
+          { id: 'audio', label: 'Audio', icon: Mic2 },
+          { id: 'settings', label: 'Settings', icon: Settings }
+        ]" :key="cat.id" @click="currentCategory = cat.id"
+          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group"
+          :class="currentCategory === cat.id ? 'bg-white/5 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-white/2'">
+          <component :is="cat.icon" :size="20" :stroke-width="currentCategory === cat.id ? 2.5 : 2" />
+          <span class="hidden md:block font-medium text-sm">{{ cat.label }}</span>
+          <div v-if="currentCategory === cat.id"
+            class="ml-auto w-1.5 h-1.5 rounded-full bg-brand-indigo shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
+        </button>
+      </nav>
 
-        <div v-if="meldClient.scenes.length === 0" class="col-span-full py-12 text-center text-slate-500 glass rounded-2xl border-dashed">
-          No scenes found. Check Meld Studio session.
+      <div class="p-4 mt-auto border-t border-white/5 space-y-3">
+        <div class="hidden md:block px-2">
+          <p class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">System Health</p>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500">Latency</span>
+              <span class="text-brand-emerald font-mono">12ms</span>
+            </div>
+            <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+              <div class="bg-brand-emerald h-full w-[85%]"></div>
+            </div>
+          </div>
         </div>
-
-        <!-- Controls -->
-        <DeckButton
-          label="Stream"
-          :active="meldClient.isStreaming.value"
-          color="red"
-          @click="meldClient.toggleStream()"
-        >
-          <span class="text-sm font-medium">{{ meldClient.isStreaming.value ? 'Stop' : 'Go Live' }}</span>
-        </DeckButton>
-
-        <DeckButton
-          label="Record"
-          :active="meldClient.isRecording.value"
-          color="indigo"
-          @click="meldClient.toggleRecord()"
-        >
-          <span class="text-sm font-medium">{{ meldClient.isRecording.value ? 'Stop' : 'Record' }}</span>
-        </DeckButton>
-
-        <!-- Placeholder / Setup -->
-        <DeckButton
-          label="Setup"
-          color="slate"
-          @click="() => {}"
-        >
-          <span class="text-sm font-medium text-slate-500 italic">Configure</span>
-        </DeckButton>
-      </div>
-
-      <!-- Disconnected State -->
-      <div 
-        v-else 
-        class="h-full flex flex-col items-center justify-center gap-4 text-center p-12 glass rounded-3xl"
-      >
-        <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 text-2xl animate-pulse">
-          ⚠️
-        </div>
-        <div>
-          <h2 class="text-xl font-bold mb-2">Disconnected from Meld Studio</h2>
-          <p class="text-slate-400 max-w-xs">
-            Make sure Meld Studio is running and the WebChannel API is enabled on 127.0.0.1:13376.
-          </p>
-        </div>
-        <button 
-          @click="meldClient.connect()"
-          class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 transition-colors rounded-full font-bold text-sm uppercase tracking-widest"
-        >
-          Retry Connection
+        <button
+          class="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all">
+          <Power :size="18" />
+          <span class="hidden md:block text-xs font-bold uppercase tracking-wider">Disconnect</span>
         </button>
       </div>
-    </main>
+    </aside>
 
-    <!-- Footer -->
-    <footer class="text-center text-slate-600 text-[10px] uppercase tracking-[0.2em]">
-      Powered by Meld Studio WebChannel API
-    </footer>
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col relative overflow-hidden">
+      <!-- Top Header Bar -->
+      <header
+        class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-black/10 backdrop-blur-md z-10">
+        <div class="flex items-center gap-4">
+          <h2 class="text-lg font-bold capitalize">{{ currentCategory === 'deck' ? 'My Control Deck' : currentCategory
+            }}</h2>
+          <div class="h-4 w-px bg-white/10"></div>
+          <p class="text-xs text-slate-400">
+            {{ currentCategory === 'deck' ? deckManager.pinnedIds.value.length : (currentCategory === 'scenes' ?
+              meldClient.scenes.length : 'Control Panel') }}
+            Active Elements
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <StatusBadge label="Live" type="live" :active="meldClient.isStreaming.value" />
+          <StatusBadge label="Rec" type="rec" :active="meldClient.isRecording.value" />
+          <StatusBadge label="Meld Link" type="connection" :active="meldClient.isConnected.value" />
+        </div>
+      </header>
+
+      <!-- Grid Content -->
+      <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div v-if="!meldClient.isConnected.value && currentCategory !== 'settings'"
+          class="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+          <div
+            class="w-20 h-20 rounded-3xl bg-brand-rose/10 flex items-center justify-center text-brand-rose mb-6 animate-pulse border border-brand-rose/20">
+            <Radio :size="40" stroke-width="1.5" />
+          </div>
+          <h3 class="text-xl font-bold mb-2">Awaiting Meld Studio</h3>
+          <p class="text-slate-500 text-sm leading-relaxed mb-8">
+            Please ensure Meld Studio is running and the WebChannel API is enabled on your local machine.
+          </p>
+          <button @click="meldClient.connect()"
+            class="px-8 py-3 bg-white text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all shadow-xl shadow-white/5">
+            Launch Connection
+          </button>
+        </div>
+
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <!-- Consolidated Deck View -->
+          <template v-if="currentCategory === 'deck'">
+            <div v-if="deckManager.pinnedIds.value.length === 0"
+              class="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+              <Pin :size="48" class="mx-auto text-slate-700 mb-4" />
+              <p class="text-slate-500 font-medium">Your deck is empty. Pin items from other pages to see them here.</p>
+            </div>
+
+            <template v-else>
+              <!-- Pinned Scenes -->
+              <DeckButton v-for="scene in meldClient.scenes.filter(s => deckManager.isPinned(s.id))" :key="scene.id"
+                label="Scene" :active="scene.current" color="indigo" :icon="Monitor" :pinned="true" showPin
+                @click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)">
+                {{ scene.name }}
+              </DeckButton>
+
+              <!-- Pinned Controls -->
+              <DeckButton v-if="deckManager.isPinned('control_stream')" label="Output"
+                :active="meldClient.isStreaming.value" color="red" :icon="Video" :pinned="true" showPin
+                @click="meldClient.toggleStream()" @toggle-pin="deckManager.togglePin('control_stream')">
+                {{ meldClient.isStreaming.value ? 'Stop Stream' : 'Start Stream' }}
+              </DeckButton>
+
+              <DeckButton v-if="deckManager.isPinned('control_record')" label="Capture"
+                :active="meldClient.isRecording.value" color="indigo" :icon="Circle" :pinned="true" showPin
+                @click="meldClient.toggleRecord()" @toggle-pin="deckManager.togglePin('control_record')">
+                {{ meldClient.isRecording.value ? 'End Recording' : 'Start Recording' }}
+              </DeckButton>
+            </template>
+          </template>
+
+          <template v-if="currentCategory === 'scenes'">
+            <DeckButton v-for="scene in meldClient.scenes" :key="scene.id" label="Scene" :active="scene.current"
+              color="indigo" :icon="Monitor" :pinned="deckManager.isPinned(scene.id)" showPin
+              @click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)">
+              {{ scene.name }}
+            </DeckButton>
+
+            <div v-if="meldClient.scenes.length === 0" class="col-span-full py-20 text-center">
+              <p class="text-slate-600 italic">No scenes detected in current session.</p>
+            </div>
+          </template>
+
+          <template v-if="currentCategory === 'controls'">
+            <DeckButton label="Output" :active="meldClient.isStreaming.value" color="red" :icon="Video"
+              :pinned="deckManager.isPinned('control_stream')" showPin @click="meldClient.toggleStream()"
+              @toggle-pin="deckManager.togglePin('control_stream')">
+              {{ meldClient.isStreaming.value ? 'Stop Stream' : 'Start Stream' }}
+            </DeckButton>
+
+            <DeckButton label="Capture" :active="meldClient.isRecording.value" color="indigo" :icon="Circle"
+              :pinned="deckManager.isPinned('control_record')" showPin @click="meldClient.toggleRecord()"
+              @toggle-pin="deckManager.togglePin('control_record')">
+              {{ meldClient.isRecording.value ? 'End Recording' : 'Start Recording' }}
+            </DeckButton>
+          </template>
+
+          <template v-if="currentCategory === 'audio'">
+            <div class="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+              <Mic2 :size="48" class="mx-auto text-slate-700 mb-4" />
+              <p class="text-slate-500 font-medium">Audio Mixer controls coming soon</p>
+            </div>
+          </template>
+
+          <template v-if="currentCategory === 'settings'">
+            <div class="col-span-full max-w-2xl">
+              <div class="glass-panel rounded-3xl p-8 space-y-6">
+                <!-- Settings Content Same as Before -->
+                <div class="flex items-center gap-4 mb-2">
+                  <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
+                    <Settings :size="24" class="text-slate-400" />
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-lg">App Configuration</h4>
+                    <p class="text-xs text-slate-500">Manage your local Meld link parameters</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Server
+                      Address</label>
+                    <input type="text" value="127.0.0.1" disabled
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-indigo outline-none transition-all cursor-not-allowed opacity-50" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">API Port</label>
+                    <input type="text" value="13376" disabled
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-indigo outline-none transition-all cursor-not-allowed opacity-50" />
+                  </div>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                  <button
+                    class="flex-1 px-6 py-3 bg-brand-indigo rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-indigo/80 transition-all">Save
+                    Profile</button>
+                  <button
+                    class="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">Reset
+                    Default</button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Quick Help Footer Same as Before -->
+      <footer
+        class="h-12 border-t border-white/5 flex items-center justify-between px-8 bg-black/20 text-[10px] text-slate-600 uppercase tracking-[0.2em] font-bold">
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-2">
+            <div class="w-1 h-1 rounded-full bg-brand-indigo animate-pulse"></div>
+            API v1.4.2
+          </div>
+          <div class="flex items-center gap-2">
+            <HelpCircle :size="12" />
+            Press F1 for Docs
+          </div>
+        </div>
+        <div>Studio Connect Protocol</div>
+      </footer>
+    </main>
   </div>
 </template>
 
 <style>
-/* Custom scrollbar for a cleaner look */
-::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
-::-webkit-scrollbar-track {
+
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.grid>* {
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.grid>*:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.grid>*:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.grid>*:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.grid>*:nth-child(5) {
+  animation-delay: 0.2s;
 }
 </style>
