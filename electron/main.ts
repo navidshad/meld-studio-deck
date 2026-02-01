@@ -196,6 +196,10 @@ app.on('activate', () => {
 	}
 });
 
+app.on('before-quit', () => {
+	isQuitting = true;
+});
+
 // App properties
 // @ts-ignore
 // app.isQuiting = false;
