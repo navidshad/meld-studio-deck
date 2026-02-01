@@ -17,7 +17,7 @@ const emit = defineEmits(['click', 'togglePin']);
 <template>
   <div class="relative group/deck h-full">
     <button @click="emit('click')"
-      class="w-full h-full glass-card rounded-xl p-2 flex flex-col items-center justify-center gap-2 relative overflow-hidden active:scale-95 group transition-all duration-200"
+      class="w-full h-full glass-card rounded-xl p-2 flex flex-col items-center justify-center gap-2 relative overflow-hidden active:scale-95 group transition-all duration-200 outline-none ring-0 focus:outline-none focus:ring-0"
       :class="{
         'border-indigo-500/50 bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.3)]': active && color === 'indigo',
         'border-rose-500/50 bg-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.3)]': active && color === 'red',
