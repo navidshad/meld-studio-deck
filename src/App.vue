@@ -23,12 +23,35 @@ onMounted(() => {
 const updateTitle = () => {
   if (!window.electronAPI) return;
 
+  // Check for switching state
+  if (meldClient.pendingSceneId.value) {
+    window.electronAPI.setTrayTitle('Switching...');
+    return;
+  }
+
   const currentScene = meldClient.scenes.find(s => s.current);
   const sceneName = currentScene ? currentScene.name : 'Ready';
 
   const parts = [];
-  if (meldClient.isRecording.value) parts.push('🔴');
-  if (meldClient.isStreaming.value) parts.push('📡');
+
+  // Recording
+  if (meldClient.isRecording.value) {
+    parts.push('🔴');
+  } else if (meldClient.pendingRecord.value) {
+    parts.push('⚪️'); // Grayscale/Waiting
+  }
+
+  // Streaming
+  if (meldClient.isStreaming.value) {
+    parts.push('📡');
+  } else if (meldClient.pendingStream.value) {
+    parts.push('📡'); // Maybe just show icon? Or Gray?
+    // User asked: "record and stream -> greyscal -> color icon"
+    // There isn't a great grayscale satellite emoji. Maybe 🕸️? Or just the same icon but user knows its waiting?
+    // Let's try to find a "waiting" icon.
+    // Or just string "..." 
+    // Let's stick to the colored one for now but maybe order changes? Use ⚪️ for generic wait?
+  }
 
   parts.push(sceneName);
 
@@ -36,9 +59,15 @@ const updateTitle = () => {
 };
 
 watch(
-  [() => meldClient.scenes, () => meldClient.isRecording.value, () => meldClient.isStreaming.value],
+  [
+    () => meldClient.scenes,
+    () => meldClient.isRecording.value,
+    () => meldClient.isStreaming.value,
+    () => meldClient.pendingSceneId.value,
+    () => meldClient.pendingRecord.value,
+    () => meldClient.pendingStream.value
+  ],
   () => {
-    // Ensure defaults are set if scenes available (idempotent usually)
     if (meldClient.scenes.length > 0) {
       deckManager.setDefaults(meldClient.scenes.map(s => s.id));
     }

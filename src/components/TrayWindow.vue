@@ -14,35 +14,6 @@ import {
 
 // In tray window, we might want to auto-close after action?
 // For now, let's keep it simple.
-const loadingId = ref<string | null>(null);
-
-const handleAction = async (id: string, action: () => void, checkActive: () => boolean) => {
-	if (loadingId.value) return;
-
-	// If we're clicking the already active item (and it's a scene), no need to load
-	// But for toggles (stream/record), specific check is needed.
-	// Actually, "showing scene" might re-trigger. Let's just show loading.
-
-	// Optimistic / Loading state
-	loadingId.value = id;
-	action();
-
-	// Watch for state change or timeout
-	// In a real app we'd wait for a promise, but here we wait for the reactive state to match.
-	// Or just simple timeout for UX if the state change is usually fast.
-
-	// Simple approach: Clear loading when the target state becomes active? 
-	// Or just set a fixed timeout because the websocket update comes later.
-	// Let's poll for the expected state change or timeout.
-
-	const startTime = Date.now();
-	const interval = setInterval(() => {
-		if (checkActive() || Date.now() - startTime > 2000) {
-			loadingId.value = null;
-			clearInterval(interval);
-		}
-	}, 100);
-};
 
 const quitApp = () => {
 	window.electronAPI?.quitApp();
@@ -50,6 +21,11 @@ const quitApp = () => {
 
 const openMain = () => {
 	window.electronAPI?.showMainWindow();
+};
+
+const handleTrayClick = (action: () => void) => {
+	action();
+	window.electronAPI?.hideTray();
 };
 
 const activeSceneName = computed(() => {
@@ -113,27 +89,23 @@ const activeSceneName = computed(() => {
 				<!-- Pinned Scenes -->
 				<DeckButton v-for="scene in meldClient.scenes.filter(s => deckManager.isPinned(s.id))" :key="scene.id"
 					label="Scene" :active="scene.current" color="indigo" :icon="Monitor" :pinned="false"
-					:loading="loadingId === scene.id" :showPin="false" class="text-[10px]"
-					@click="handleAction(scene.id, () => meldClient.showScene(scene.id), () => scene.current)">
+					:loading="meldClient.pendingSceneId.value === scene.id" :showPin="false" class="text-[10px]"
+					@click="handleTrayClick(() => meldClient.showScene(scene.id))">
 					{{ scene.name }}
 				</DeckButton>
 
 				<!-- Pinned Controls -->
 				<DeckButton v-if="deckManager.isPinned('control_stream')" label="Output"
-					:loading="loadingId === 'control_stream'" :active="meldClient.isStreaming.value" color="red"
+					:loading="meldClient.pendingStream.value" :active="meldClient.isStreaming.value" color="red"
 					:icon="Video" :pinned="false" :showPin="false" class="text-[10px]"
-					@click="handleAction('control_stream', () => meldClient.toggleStream(), () => meldClient.isStreaming.value !== meldClient.isStreaming.value)">
-					<!-- Note: The check logic above is flawed because it compares current to current. 
-                         We need to capture *expected* state or just wait. 
-                         For simplicity and reliability, let's just use strict timeout for toggles OR capture initial state.
-                    -->
+					@click="handleTrayClick(() => meldClient.toggleStream())">
 					{{ meldClient.isStreaming.value ? 'Stop' : 'Stream' }}
 				</DeckButton>
 
 				<DeckButton v-if="deckManager.isPinned('control_record')" label="Capture"
-					:loading="loadingId === 'control_record'" :active="meldClient.isRecording.value" color="indigo"
+					:loading="meldClient.pendingRecord.value" :active="meldClient.isRecording.value" color="indigo"
 					:icon="Circle" :pinned="false" :showPin="false" class="text-[10px]"
-					@click="handleAction('control_record', () => meldClient.toggleRecord(), () => meldClient.isRecording.value !== meldClient.isRecording.value)">
+					@click="handleTrayClick(() => meldClient.toggleRecord())">
 					{{ meldClient.isRecording.value ? 'End' : 'Rec' }}
 				</DeckButton>
 			</div>

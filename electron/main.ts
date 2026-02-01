@@ -142,6 +142,10 @@ ipcMain.on('app:show-main', () => {
 	if (app.dock) app.dock.show();
 });
 
+ipcMain.on('tray:hide', () => {
+	trayWindow?.hide();
+});
+
 app.whenReady().then(() => {
 	createMainWindow();
 	createTrayWindow();

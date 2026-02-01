@@ -3,6 +3,12 @@ import { reactive, ref } from 'vue';
 declare global {
 	interface Window {
 		QWebChannel: any;
+		electronAPI?: {
+			quitApp: () => void;
+			setTrayTitle: (title: string) => void;
+			showMainWindow: () => void;
+			hideTray: () => void;
+		}
 	}
 }
 
@@ -18,6 +24,12 @@ export class MeldClient {
 	public isStreaming = ref(false);
 	public isRecording = ref(false);
 	public isConnected = ref(false);
+
+	// Pending States for UI Feedback
+	public pendingSceneId = ref<string | null>(null);
+	public pendingStream = ref(false);
+	public pendingRecord = ref(false);
+
 	public meld: any = null;
 
 	private address: string;
@@ -43,14 +55,21 @@ export class MeldClient {
 				// Connect signals
 				this.meld.sessionChanged.connect(() => {
 					this.updateState();
+					// Clear pending scene if active
+					const current = this.scenes.find(s => s.current);
+					if (current && current.id === this.pendingSceneId.value) {
+						this.pendingSceneId.value = null;
+					}
 				});
 
 				this.meld.isStreamingChanged.connect(() => {
 					this.isStreaming.value = this.meld.isStreaming;
+					this.pendingStream.value = false;
 				});
 
 				this.meld.isRecordingChanged.connect(() => {
 					this.isRecording.value = this.meld.isRecording;
+					this.pendingRecord.value = false;
 				});
 			});
 		};
@@ -88,19 +107,28 @@ export class MeldClient {
 
 	public showScene(id: string) {
 		if (this.meld) {
+			this.pendingSceneId.value = id;
 			this.meld.showScene(id);
+			// Fallback timeout
+			setTimeout(() => {
+				if (this.pendingSceneId.value === id) this.pendingSceneId.value = null;
+			}, 3000);
 		}
 	}
 
 	public toggleStream() {
 		if (this.meld) {
+			this.pendingStream.value = true;
 			this.meld.toggleStream();
+			setTimeout(() => { this.pendingStream.value = false; }, 3000);
 		}
 	}
 
 	public toggleRecord() {
 		if (this.meld) {
+			this.pendingRecord.value = true;
 			this.meld.toggleRecord();
+			setTimeout(() => { this.pendingRecord.value = false; }, 3000);
 		}
 	}
 }

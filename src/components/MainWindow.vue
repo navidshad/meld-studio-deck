@@ -23,22 +23,6 @@ import {
 
 const currentCategory = ref('deck');
 const isSidebarMini = ref(false);
-const loadingId = ref<string | null>(null);
-
-const handleAction = async (id: string, action: () => void, checkActive: () => boolean) => {
-	if (loadingId.value) return;
-
-	loadingId.value = id;
-	action();
-
-	const startTime = Date.now();
-	const interval = setInterval(() => {
-		if (checkActive() || Date.now() - startTime > 2000) {
-			loadingId.value = null;
-			clearInterval(interval);
-		}
-	}, 100);
-};
 </script>
 
 <template>
@@ -176,25 +160,25 @@ const handleAction = async (id: string, action: () => void, checkActive: () => b
 							<!-- Pinned Scenes -->
 							<DeckButton v-for="scene in meldClient.scenes.filter(s => deckManager.isPinned(s.id))"
 								:key="scene.id" label="Scene" :active="scene.current" color="indigo" :icon="Monitor"
-								:pinned="true" showPin class="aspect-[1.6]" :loading="loadingId === scene.id"
-								@click="handleAction(scene.id, () => meldClient.showScene(scene.id), () => scene.current)"
-								@toggle-pin="deckManager.togglePin(scene.id)">
+								:pinned="true" showPin class="aspect-[1.6]"
+								:loading="meldClient.pendingSceneId.value === scene.id"
+								@click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)">
 								{{ scene.name }}
 							</DeckButton>
 
 							<!-- Pinned Controls -->
 							<DeckButton v-if="deckManager.isPinned('control_stream')" label="Output"
 								:active="meldClient.isStreaming.value" color="red" :icon="Video" :pinned="true" showPin
-								class="aspect-[1.6]" :loading="loadingId === 'control_stream'"
-								@click="handleAction('control_stream', () => meldClient.toggleStream(), () => meldClient.isStreaming.value !== meldClient.isStreaming.value)"
+								class="aspect-[1.6]" :loading="meldClient.pendingStream.value"
+								@click="meldClient.toggleStream()"
 								@toggle-pin="deckManager.togglePin('control_stream')">
 								{{ meldClient.isStreaming.value ? 'Stop Stream' : 'Start Stream' }}
 							</DeckButton>
 
 							<DeckButton v-if="deckManager.isPinned('control_record')" label="Capture"
 								:active="meldClient.isRecording.value" color="indigo" :icon="Circle" :pinned="true"
-								showPin class="aspect-[1.6]" :loading="loadingId === 'control_record'"
-								@click="handleAction('control_record', () => meldClient.toggleRecord(), () => meldClient.isRecording.value !== meldClient.isRecording.value)"
+								showPin class="aspect-[1.6]" :loading="meldClient.pendingRecord.value"
+								@click="meldClient.toggleRecord()"
 								@toggle-pin="deckManager.togglePin('control_record')">
 								{{ meldClient.isRecording.value ? 'End Recording' : 'Start Recording' }}
 							</DeckButton>
@@ -205,9 +189,8 @@ const handleAction = async (id: string, action: () => void, checkActive: () => b
 						<DeckButton v-for="scene in meldClient.scenes" :key="scene.id" label="Scene"
 							:active="scene.current" color="indigo" :icon="Monitor"
 							:pinned="deckManager.isPinned(scene.id)" showPin class="aspect-[1.6]"
-							:loading="loadingId === scene.id"
-							@click="handleAction(scene.id, () => meldClient.showScene(scene.id), () => scene.current)"
-							@toggle-pin="deckManager.togglePin(scene.id)">
+							:loading="meldClient.pendingSceneId.value === scene.id"
+							@click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)">
 							{{ scene.name }}
 						</DeckButton>
 
@@ -219,16 +202,14 @@ const handleAction = async (id: string, action: () => void, checkActive: () => b
 					<template v-if="currentCategory === 'controls'">
 						<DeckButton label="Output" :active="meldClient.isStreaming.value" color="red" :icon="Video"
 							:pinned="deckManager.isPinned('control_stream')" showPin class="aspect-[1.6]"
-							:loading="loadingId === 'control_stream'"
-							@click="handleAction('control_stream', () => meldClient.toggleStream(), () => meldClient.isStreaming.value !== meldClient.isStreaming.value)"
+							:loading="meldClient.pendingStream.value" @click="meldClient.toggleStream()"
 							@toggle-pin="deckManager.togglePin('control_stream')">
 							{{ meldClient.isStreaming.value ? 'Stop Stream' : 'Start Stream' }}
 						</DeckButton>
 
 						<DeckButton label="Capture" :active="meldClient.isRecording.value" color="indigo" :icon="Circle"
 							:pinned="deckManager.isPinned('control_record')" showPin class="aspect-[1.6]"
-							:loading="loadingId === 'control_record'"
-							@click="handleAction('control_record', () => meldClient.toggleRecord(), () => meldClient.isRecording.value !== meldClient.isRecording.value)"
+							:loading="meldClient.pendingRecord.value" @click="meldClient.toggleRecord()"
 							@toggle-pin="deckManager.togglePin('control_record')">
 							{{ meldClient.isRecording.value ? 'End Recording' : 'Start Recording' }}
 						</DeckButton>

@@ -4,4 +4,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	quitApp: () => ipcRenderer.send('app:quit'),
 	setTrayTitle: (title: string) => ipcRenderer.send('tray:set-title', title),
 	showMainWindow: () => ipcRenderer.send('app:show-main'),
+	hideTray: () => ipcRenderer.send('tray:hide'),
 });
