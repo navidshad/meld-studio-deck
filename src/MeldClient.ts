@@ -1,16 +1,6 @@
 import { reactive, ref } from 'vue';
 
-declare global {
-	interface Window {
-		QWebChannel: any;
-		electronAPI?: {
-			quitApp: () => void;
-			setTrayTitle: (title: string) => void;
-			showMainWindow: () => void;
-			hideTray: () => void;
-		}
-	}
-}
+
 
 export interface MeldScene {
 	id: string;

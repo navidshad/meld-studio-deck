@@ -10,4 +10,5 @@ interface Window {
 		registerHotkeys: (hotkeys: Record<string, string>) => void;
 		onHotkeyTriggered: (callback: (actionId: string) => void) => void;
 	};
+	QWebChannel: any;
 }
