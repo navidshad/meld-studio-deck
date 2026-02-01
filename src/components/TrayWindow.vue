@@ -40,28 +40,44 @@ const activeSceneName = computed(() => {
 
 		<!-- Header -->
 		<div class="h-10 border-b border-white/5 flex items-center justify-between px-4 bg-white/5 drag-region">
-			<div class="flex items-center gap-2">
-				<div class="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+			<div class="flex items-center gap-3 w-full">
+				<!-- Connection Dot -->
+				<div class="shrink-0 w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"
 					:class="meldClient.isConnected.value ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'"></div>
-				<span class="text-[11px] font-bold tracking-widest text-slate-400 uppercase">Meld Deck</span>
-			</div>
-			<!-- Active Scene Protocol -->
-			<div class="flex items-center gap-2">
-				<!-- Status Icons -->
-				<div v-if="meldClient.isRecording.value"
-					class="flex items-center gap-1 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-full">
-					<div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-					<span class="text-[9px] font-bold text-red-400">REC</span>
-				</div>
-				<div v-if="meldClient.isStreaming.value"
-					class="flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-full">
-					<div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-					<span class="text-[9px] font-bold text-rose-400">LIVE</span>
-				</div>
 
-				<div v-if="activeSceneName"
-					class="text-[10px] text-indigo-300 font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 max-w-[100px] truncate">
-					{{ activeSceneName }}
+				<!-- Dynamic Status Text -->
+				<div class="flex items-center gap-2 overflow-hidden">
+					<template v-if="!meldClient.isConnected.value">
+						<span
+							class="text-[11px] font-bold tracking-widest text-slate-500 uppercase">Connecting...</span>
+					</template>
+
+					<template v-else>
+						<!-- Priority Statuses -->
+						<div v-if="meldClient.isRecording.value" class="flex items-center gap-1.5 min-w-0">
+							<div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+							<span
+								class="text-[10px] font-bold text-red-400 uppercase tracking-wider whitespace-nowrap">Rec</span>
+						</div>
+
+						<div v-if="meldClient.isStreaming.value" class="flex items-center gap-1.5 min-w-0">
+							<div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+							<span
+								class="text-[10px] font-bold text-rose-400 uppercase tracking-wider whitespace-nowrap">Live</span>
+						</div>
+
+						<!-- Scene Name (Always show if connected, maybe truncated if multiple statuses) -->
+						<span v-if="activeSceneName" class="text-[11px] font-bold text-slate-300 truncate tracking-wide"
+							:class="{ 'text-indigo-300': !meldClient.isRecording.value && !meldClient.isStreaming.value }">
+							{{ activeSceneName }}
+						</span>
+
+						<!-- Fallback Title -->
+						<span v-else-if="!meldClient.isRecording.value && !meldClient.isStreaming.value"
+							class="text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+							Meld Deck
+						</span>
+					</template>
 				</div>
 			</div>
 		</div>

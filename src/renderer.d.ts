@@ -6,5 +6,8 @@ interface Window {
 		quitApp: () => void;
 		setTrayTitle: (title: string) => void;
 		showMainWindow: () => void;
+		hideTray: () => void;
+		registerHotkeys: (hotkeys: Record<string, string>) => void;
+		onHotkeyTriggered: (callback: (actionId: string) => void) => void;
 	};
 }

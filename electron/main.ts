@@ -20,9 +20,12 @@ process.env.DIST_ELECTRON = path.join(__dirname, '../dist-electron');
 process.env.DIST = path.join(__dirname, '../dist');
 process.env.PUBLIC = app.isPackaged ? process.env.DIST : path.join(__dirname, '../public');
 
+const PUBLIC_PATH = process.env.PUBLIC || '';
+
 let mainWindow: BrowserWindow | null = null;
 let trayWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let isQuitting = false;
 
 // constant for preload path
 // constant for preload path
@@ -33,7 +36,7 @@ const indexHtml = path.join(process.env.DIST, 'index.html');
 function createMainWindow() {
 	mainWindow = new BrowserWindow({
 		title: 'Meld Deck',
-		icon: path.join(process.env.PUBLIC, 'favicon.ico'),
+		icon: path.join(PUBLIC_PATH, 'favicon.ico'),
 		width: 1280,
 		height: 800,
 		webPreferences: {
@@ -53,7 +56,7 @@ function createMainWindow() {
 
 	// Hide on close instead of destroying
 	mainWindow.on('close', (event) => {
-		if (!app.isQuiting) {
+		if (!isQuitting) {
 			event.preventDefault();
 			mainWindow?.hide();
 			if (app.dock) app.dock.hide(); // Optional: Logic to hide from dock if only in tray? 
@@ -102,7 +105,7 @@ function createTrayWindow() {
 }
 
 function createTray() {
-	const icon = nativeImage.createFromPath(path.join(process.env.PUBLIC, 'tray-icon.png')); // Placeholder
+	const icon = nativeImage.createFromPath(path.join(PUBLIC_PATH, 'tray-icon.png')); // Placeholder
 	tray = new Tray(icon);
 	tray.setTitle('Meld Deck'); // Default Title
 	tray.setToolTip('Meld Deck');
@@ -132,7 +135,7 @@ function createTray() {
 
 // IPC Handlers
 ipcMain.on('app:quit', () => {
-	app.isQuiting = true;
+	isQuitting = true;
 	app.quit();
 });
 
@@ -149,15 +152,32 @@ ipcMain.on('tray:hide', () => {
 	trayWindow?.hide();
 });
 
+ipcMain.on('hotkey:register', (_event, hotkeys: Record<string, string>) => {
+	globalShortcut.unregisterAll();
+
+	for (const [actionId, shortcut] of Object.entries(hotkeys)) {
+		try {
+			if (!shortcut) continue;
+
+			// Basic sanitization/check? Electron handles most.
+			const ret = globalShortcut.register(shortcut, () => {
+				// Send to mainWindow
+				mainWindow?.webContents.send('hotkey:triggered', actionId);
+			});
+
+			if (!ret) {
+				console.warn('Registration failed for shortcut:', shortcut);
+			}
+		} catch (e) {
+			console.error(`Failed to register shortcut ${shortcut} for ${actionId}`, e);
+		}
+	}
+});
+
 app.whenReady().then(() => {
 	createMainWindow();
 	createTrayWindow();
 	createTray();
-
-	// Basic Global Shortcut Stub
-	// globalShortcut.register('CommandOrControl+Shift+K', () => {
-	//   mainWindow?.webContents.send('global-shortcut:trigger', 'test');
-	// });
 });
 
 app.on('window-all-closed', () => {
@@ -178,4 +198,4 @@ app.on('activate', () => {
 
 // App properties
 // @ts-ignore
-app.isQuiting = false;
+// app.isQuiting = false;

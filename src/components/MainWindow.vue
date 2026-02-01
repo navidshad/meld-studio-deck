@@ -2,7 +2,9 @@
 import { ref } from 'vue';
 import { meldClient } from '../MeldClient';
 import { deckManager } from '../DeckManager';
+import { hotkeyManager } from '../HotkeyManager';
 import DeckButton from './DeckButton.vue';
+import HotkeyModal from './HotkeyModal.vue';
 import StatusBadge from './StatusBadge.vue';
 import {
 	LayoutDashboard,
@@ -21,6 +23,29 @@ import {
 
 const currentCategory = ref('deck');
 const isSidebarMini = ref(false);
+
+// Hotkey Modal Logic
+const showHotkeyModal = ref(false);
+const editingActionId = ref('');
+const editingActionName = ref('');
+const currentEditingShortcut = ref('');
+
+const handleOpenHotkey = (id: string, name: string) => {
+	editingActionId.value = id;
+	editingActionName.value = name;
+	currentEditingShortcut.value = hotkeyManager.getHotkey(id) || '';
+	showHotkeyModal.value = true;
+};
+
+const handleSaveHotkey = async (shortcut: string) => {
+	await hotkeyManager.setHotkey(editingActionId.value, shortcut);
+	showHotkeyModal.value = false;
+};
+
+const handleClearHotkey = async () => {
+	await hotkeyManager.removeHotkey(editingActionId.value);
+	showHotkeyModal.value = false;
+};
 </script>
 
 <template>
@@ -134,26 +159,29 @@ const isSidebarMini = ref(false);
 							<!-- Pinned Scenes -->
 							<DeckButton v-for="scene in meldClient.scenes.filter(s => deckManager.isPinned(s.id))"
 								:key="scene.id" label="Scene" :active="scene.current" color="indigo" :icon="Monitor"
-								:pinned="true" showPin class="aspect-[1.6]"
+								:pinned="true" showPin :enableHotkeyConfig="true" class="aspect-[1.6]"
 								:loading="meldClient.pendingSceneId.value === scene.id"
-								@click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)">
+								@click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)"
+								@openHotkeyModal="handleOpenHotkey(scene.id, scene.name)">
 								{{ scene.name }}
 							</DeckButton>
 
 							<!-- Pinned Controls -->
 							<DeckButton v-if="deckManager.isPinned('control_stream')" label="Output"
 								:active="meldClient.isStreaming.value" color="red" :icon="Video" :pinned="true" showPin
-								class="aspect-[1.6]" :loading="meldClient.pendingStream.value"
-								@click="meldClient.toggleStream()"
-								@toggle-pin="deckManager.togglePin('control_stream')">
+								:enableHotkeyConfig="true" class="aspect-[1.6]"
+								:loading="meldClient.pendingStream.value" @click="meldClient.toggleStream()"
+								@toggle-pin="deckManager.togglePin('control_stream')"
+								@openHotkeyModal="handleOpenHotkey('control_stream', 'Toggle Stream')">
 								{{ meldClient.isStreaming.value ? 'Stop Stream' : 'Start Stream' }}
 							</DeckButton>
 
 							<DeckButton v-if="deckManager.isPinned('control_record')" label="Capture"
 								:active="meldClient.isRecording.value" color="indigo" :icon="Circle" :pinned="true"
-								showPin class="aspect-[1.6]" :loading="meldClient.pendingRecord.value"
-								@click="meldClient.toggleRecord()"
-								@toggle-pin="deckManager.togglePin('control_record')">
+								showPin :enableHotkeyConfig="true" class="aspect-[1.6]"
+								:loading="meldClient.pendingRecord.value" @click="meldClient.toggleRecord()"
+								@toggle-pin="deckManager.togglePin('control_record')"
+								@openHotkeyModal="handleOpenHotkey('control_record', 'Toggle Record')">
 								{{ meldClient.isRecording.value ? 'End Recording' : 'Start Recording' }}
 							</DeckButton>
 						</template>
@@ -162,9 +190,10 @@ const isSidebarMini = ref(false);
 					<template v-if="currentCategory === 'scenes'">
 						<DeckButton v-for="scene in meldClient.scenes" :key="scene.id" label="Scene"
 							:active="scene.current" color="indigo" :icon="Monitor"
-							:pinned="deckManager.isPinned(scene.id)" showPin class="aspect-[1.6]"
-							:loading="meldClient.pendingSceneId.value === scene.id"
-							@click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)">
+							:pinned="deckManager.isPinned(scene.id)" showPin :enableHotkeyConfig="true"
+							class="aspect-[1.6]" :loading="meldClient.pendingSceneId.value === scene.id"
+							@click="meldClient.showScene(scene.id)" @toggle-pin="deckManager.togglePin(scene.id)"
+							@openHotkeyModal="handleOpenHotkey(scene.id, scene.name)">
 							{{ scene.name }}
 						</DeckButton>
 
@@ -175,16 +204,18 @@ const isSidebarMini = ref(false);
 
 					<template v-if="currentCategory === 'controls'">
 						<DeckButton label="Output" :active="meldClient.isStreaming.value" color="red" :icon="Video"
-							:pinned="deckManager.isPinned('control_stream')" showPin class="aspect-[1.6]"
-							:loading="meldClient.pendingStream.value" @click="meldClient.toggleStream()"
-							@toggle-pin="deckManager.togglePin('control_stream')">
+							:pinned="deckManager.isPinned('control_stream')" showPin :enableHotkeyConfig="true"
+							class="aspect-[1.6]" :loading="meldClient.pendingStream.value"
+							@click="meldClient.toggleStream()" @toggle-pin="deckManager.togglePin('control_stream')"
+							@openHotkeyModal="handleOpenHotkey('control_stream', 'Toggle Stream')">
 							{{ meldClient.isStreaming.value ? 'Stop Stream' : 'Start Stream' }}
 						</DeckButton>
 
 						<DeckButton label="Capture" :active="meldClient.isRecording.value" color="indigo" :icon="Circle"
-							:pinned="deckManager.isPinned('control_record')" showPin class="aspect-[1.6]"
-							:loading="meldClient.pendingRecord.value" @click="meldClient.toggleRecord()"
-							@toggle-pin="deckManager.togglePin('control_record')">
+							:pinned="deckManager.isPinned('control_record')" showPin :enableHotkeyConfig="true"
+							class="aspect-[1.6]" :loading="meldClient.pendingRecord.value"
+							@click="meldClient.toggleRecord()" @toggle-pin="deckManager.togglePin('control_record')"
+							@openHotkeyModal="handleOpenHotkey('control_record', 'Toggle Record')">
 							{{ meldClient.isRecording.value ? 'End Recording' : 'Start Recording' }}
 						</DeckButton>
 					</template>
@@ -254,6 +285,10 @@ const isSidebarMini = ref(false);
 			</footer>
 		</main>
 	</div>
+
+	<HotkeyModal v-if="showHotkeyModal" :action-id="editingActionId" :action-name="editingActionName"
+		:current-shortcut="currentEditingShortcut" @close="showHotkeyModal = false" @save="handleSaveHotkey"
+		@clear="handleClearHotkey" />
 </template>
 
 <style scoped>

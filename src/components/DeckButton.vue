@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LucideIcon } from 'lucide-vue-next';
-import { Pin, PinOff, Loader2 } from 'lucide-vue-next';
+import { Pin, PinOff, Loader2, Keyboard } from 'lucide-vue-next';
 
 defineProps<{
   label?: string;
@@ -10,9 +10,10 @@ defineProps<{
   icon?: LucideIcon;
   pinned?: boolean;
   showPin?: boolean;
+  enableHotkeyConfig?: boolean;
 }>();
 
-const emit = defineEmits(['click', 'togglePin']);
+const emit = defineEmits(['click', 'togglePin', 'openHotkeyModal']);
 </script>
 
 <template>
@@ -57,6 +58,13 @@ const emit = defineEmits(['click', 'togglePin']);
       class="absolute top-1 right-1 p-1.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-slate-500 hover:text-white transition-all opacity-0 group-hover/deck:opacity-100 scale-90 hover:scale-100"
       :class="{ 'opacity-100 text-indigo-400 border-indigo-500/30': pinned }">
       <component :is="pinned ? PinOff : Pin" :size="12" />
+    </button>
+
+    <!-- Hotkey Trigger -->
+    <button v-if="enableHotkeyConfig" @click.stop="emit('openHotkeyModal')"
+      class="absolute bottom-1 right-1 p-1.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-slate-500 hover:text-white transition-all opacity-0 group-hover/deck:opacity-100 scale-90 hover:scale-100"
+      title="Set Hotkey">
+      <Keyboard :size="12" />
     </button>
   </div>
 </template>
