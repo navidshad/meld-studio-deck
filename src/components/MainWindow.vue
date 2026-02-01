@@ -14,8 +14,6 @@ import {
 	Mic2,
 	Monitor,
 	Command,
-	HelpCircle,
-	Power,
 	Pin,
 	PanelLeftOpen,
 	PanelLeftClose
@@ -51,8 +49,8 @@ const isSidebarMini = ref(false);
 					{ id: 'deck', label: 'My Deck', icon: LayoutDashboard },
 					{ id: 'scenes', label: 'Scenes', icon: Monitor },
 					{ id: 'controls', label: 'Controls', icon: Command },
-					{ id: 'audio', label: 'Audio', icon: Mic2 },
-					{ id: 'settings', label: 'Settings', icon: Settings }
+					// { id: 'audio', label: 'Audio', icon: Mic2 },
+					// { id: 'settings', label: 'Settings', icon: Settings }
 				]" :key="cat.id" @click="currentCategory = cat.id"
 					class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group"
 					:class="[
@@ -69,30 +67,6 @@ const isSidebarMini = ref(false);
 					</div>
 				</button>
 			</nav>
-
-			<div class="p-4 mt-auto border-t border-white/5 space-y-3 overflow-hidden">
-				<div class="hidden md:block px-2 transition-all duration-300"
-					:class="isSidebarMini ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'">
-					<p class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">System Health</p>
-					<div class="space-y-2">
-						<div class="flex items-center justify-between text-[11px]">
-							<span class="text-slate-500">Latency</span>
-							<span class="text-brand-emerald font-mono">12ms</span>
-						</div>
-						<div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-							<div class="bg-brand-emerald h-full w-[85%]"></div>
-						</div>
-					</div>
-				</div>
-				<button
-					class="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all overflow-hidden"
-					:class="isSidebarMini ? 'px-0' : ''">
-					<Power :size="18" class="shrink-0" />
-					<span
-						class="transition-all duration-300 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
-						:class="isSidebarMini ? 'opacity-0 w-0' : 'md:block hidden'">Disconnect</span>
-				</button>
-			</div>
 		</aside>
 
 		<!-- Main Content Area -->
@@ -274,10 +248,6 @@ const isSidebarMini = ref(false);
 					<div class="flex items-center gap-2">
 						<div class="w-1 h-1 rounded-full bg-brand-indigo animate-pulse"></div>
 						API v1.4.2
-					</div>
-					<div class="flex items-center gap-2">
-						<HelpCircle :size="12" />
-						Press F1 for Docs
 					</div>
 				</div>
 				<div>Studio Connect Protocol</div>
