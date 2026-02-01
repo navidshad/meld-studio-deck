@@ -69,10 +69,24 @@ const activeSceneName = computed(() => {
 					:class="meldClient.isConnected.value ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'"></div>
 				<span class="text-[11px] font-bold tracking-widest text-slate-400 uppercase">Meld Deck</span>
 			</div>
-			<!-- Active Scene Indicator (Small) -->
-			<div v-if="activeSceneName"
-				class="text-[10px] text-indigo-300 font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 max-w-[120px] truncate">
-				{{ activeSceneName }}
+			<!-- Active Scene Protocol -->
+			<div class="flex items-center gap-2">
+				<!-- Status Icons -->
+				<div v-if="meldClient.isRecording.value"
+					class="flex items-center gap-1 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-full">
+					<div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+					<span class="text-[9px] font-bold text-red-400">REC</span>
+				</div>
+				<div v-if="meldClient.isStreaming.value"
+					class="flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-full">
+					<div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+					<span class="text-[9px] font-bold text-rose-400">LIVE</span>
+				</div>
+
+				<div v-if="activeSceneName"
+					class="text-[10px] text-indigo-300 font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 max-w-[100px] truncate">
+					{{ activeSceneName }}
+				</div>
 			</div>
 		</div>
 
