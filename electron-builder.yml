@@ -1,0 +1,16 @@
+appId: com.navidshad.meldstudiodeck
+productName: Meld Studio Deck
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist-electron/**/*
+  - dist/**/*
+  - package.json
+mac:
+  target:
+    - dmg
+    - zip
+  icon: public/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
