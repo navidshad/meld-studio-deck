@@ -84,6 +84,9 @@ function createTrayWindow() {
 		},
 	});
 
+	// Allow tray window to show on all desktops/fullscreen apps
+	trayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
 	if (url) {
 		trayWindow.loadURL(`${url}#/tray`);
 	} else {
