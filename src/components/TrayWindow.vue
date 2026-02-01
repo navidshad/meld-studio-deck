@@ -67,24 +67,24 @@ const openMain = () => {
 					them here.</span>
 			</div>
 
-			<div v-else class="grid grid-cols-3 gap-2">
+			<div v-else class="grid grid-cols-3 gap-2 auto-rows-fr">
 				<!-- Pinned Scenes -->
 				<DeckButton v-for="scene in meldClient.scenes.filter(s => deckManager.isPinned(s.id))" :key="scene.id"
 					label="Scene" :active="scene.current" color="indigo" :icon="Monitor" :pinned="false"
-					:showPin="false" class="h-20 text-[10px]" @click="meldClient.showScene(scene.id)">
+					:showPin="false" class="text-[10px]" @click="meldClient.showScene(scene.id)">
 					{{ scene.name }}
 				</DeckButton>
 
 				<!-- Pinned Controls -->
 				<DeckButton v-if="deckManager.isPinned('control_stream')" label="Output"
 					:active="meldClient.isStreaming.value" color="red" :icon="Video" :pinned="false" :showPin="false"
-					class="h-20 text-[10px]" @click="meldClient.toggleStream()">
+					class="text-[10px]" @click="meldClient.toggleStream()">
 					{{ meldClient.isStreaming.value ? 'Stop' : 'Stream' }}
 				</DeckButton>
 
 				<DeckButton v-if="deckManager.isPinned('control_record')" label="Capture"
 					:active="meldClient.isRecording.value" color="indigo" :icon="Circle" :pinned="false"
-					:showPin="false" class="h-20 text-[10px]" @click="meldClient.toggleRecord()">
+					:showPin="false" class="text-[10px]" @click="meldClient.toggleRecord()">
 					{{ meldClient.isRecording.value ? 'End' : 'Rec' }}
 				</DeckButton>
 			</div>
