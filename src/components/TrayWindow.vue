@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { meldClient } from '../MeldClient';
 import { deckManager } from '../DeckManager';
 import DeckButton from './DeckButton.vue';
@@ -6,11 +7,17 @@ import {
 	Video,
 	Circle,
 	Monitor,
-	Pin
+	Pin,
+	Maximize2,
+	Power
 } from 'lucide-vue-next';
 
 // In tray window, we might want to auto-close after action?
 // For now, let's keep it simple.
+const activeSceneName = computed(() => {
+	const currentScene = meldClient.scenes.find(s => s.current);
+	return currentScene ? currentScene.name : '';
+});
 
 const quitApp = () => {
 	window.electronAPI?.quitApp();
@@ -19,21 +26,45 @@ const quitApp = () => {
 const openMain = () => {
 	window.electronAPI?.showMainWindow();
 };
+
+
 </script>
 
 <template>
 	<div
-		class="h-screen w-screen bg-[#030712]/90 backdrop-blur-xl border border-white/10 text-slate-200 overflow-hidden font-sans flex flex-col p-4 rounded-xl">
+		class="h-screen w-screen bg-[#030712]/80 backdrop-blur-2xl border border-white/10 text-slate-200 overflow-hidden font-sans flex flex-col rounded-2xl shadow-2xl selection:bg-indigo-500/30">
 
-		<div v-if="!meldClient.isConnected.value" class="flex flex-col items-center justify-center flex-1 text-center">
-			<p class="text-xs text-slate-500">Connecting...</p>
+		<!-- Header -->
+		<div class="h-10 border-b border-white/5 flex items-center justify-between px-4 bg-white/5 drag-region">
+			<div class="flex items-center gap-2">
+				<div class="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+					:class="meldClient.isConnected.value ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'"></div>
+				<span class="text-[11px] font-bold tracking-widest text-slate-400 uppercase">Meld Deck</span>
+			</div>
+			<!-- Active Scene Indicator (Small) -->
+			<div v-if="activeSceneName"
+				class="text-[10px] text-indigo-300 font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 max-w-[120px] truncate">
+				{{ activeSceneName }}
+			</div>
 		</div>
 
-		<div v-else class="flex-1 overflow-y-auto custom-scrollbar">
+		<!-- Content -->
+		<div v-if="!meldClient.isConnected.value"
+			class="flex flex-col items-center justify-center flex-1 text-center p-6 space-y-3">
+			<div class="relative">
+				<div class="absolute inset-0 bg-rose-500 blur-xl opacity-20 animate-pulse"></div>
+				<Video :size="48" class="text-rose-500/50 relative z-10" />
+			</div>
+			<p class="text-xs text-slate-500 font-medium">Waiting for Meld Studio...</p>
+		</div>
+
+		<div v-else class="flex-1 overflow-y-auto custom-scrollbar p-3">
 			<div v-if="deckManager.pinnedIds.value.length === 0"
-				class="flex flex-col items-center justify-center h-full text-slate-500">
-				<Pin :size="20" class="mb-2 opacity-50" />
-				<span class="text-[10px]">No Pins</span>
+				class="flex flex-col items-center justify-center h-full text-slate-500 space-y-2">
+				<Pin :size="24" class="opacity-20" />
+				<span class="text-[11px] font-medium text-slate-600">No Pinned Items</span>
+				<span class="text-[9px] text-slate-700 text-center max-w-[200px]">Pin items from the main window to see
+					them here.</span>
 			</div>
 
 			<div v-else class="grid grid-cols-3 gap-2">
@@ -59,19 +90,20 @@ const openMain = () => {
 			</div>
 		</div>
 
-		<div class="pt-4 mt-auto border-t border-white/5 flex justify-between items-center px-1">
-			<div class="flex items-center gap-2">
-				<span class="text-[10px] text-slate-600 font-bold tracking-wider">MELD DECK</span>
+		<!-- Footer -->
+		<div class="h-12 border-t border-white/5 flex items-center justify-between px-3 bg-black/20">
+			<div class="flex items-center gap-1">
+				<!-- Status icons could go here, e.g. CPU/RAM if we had it -->
 			</div>
 
-			<div class="flex items-center gap-2">
-				<button @click="openMain"
-					class="text-[10px] bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-3 py-1 rounded-lg transition-colors">
-					Open App
+			<div class="flex items-center gap-1 group/footer">
+				<button @click="openMain" title="Open Main Window"
+					class="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all hover:scale-105 active:scale-95">
+					<Maximize2 :size="16" />
 				</button>
-				<button @click="quitApp"
-					class="text-[10px] bg-white/5 hover:bg-red-500/20 hover:text-red-400 px-3 py-1 rounded-lg transition-colors">
-					Quit
+				<button @click="quitApp" title="Quit Meld Deck"
+					class="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all hover:scale-105 active:scale-95">
+					<Power :size="16" />
 				</button>
 			</div>
 		</div>
@@ -81,5 +113,9 @@ const openMain = () => {
 <style scoped>
 .grid-cols-3 {
 	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.drag-region {
+	-webkit-app-region: drag;
 }
 </style>
